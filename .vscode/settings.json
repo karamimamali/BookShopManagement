@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.html": "html",
+        "*.py": "python",
+        "string.h": "c",
+        "stdlib.h": "c",
+        "test_bookshop.h": "c",
+        "bookshop.h": "c"
+    }
+}
