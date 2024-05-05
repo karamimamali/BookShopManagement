@@ -1,5 +1,14 @@
 # Bookshop Management System Report
 
+## How to Run
+
+First compile it from root directory:
+For main app `gcc -o main main.c bookshop.c -lsqlite3`
+For testing `gcc -o test_bookshop tests/test_bookshop.c bookshop.c -lsqlite3 -Wall`
+
+Then run it `./main` or `./test_bookshop`
+
+
 ## 1. Introduction
 
 ### Project Overview:
