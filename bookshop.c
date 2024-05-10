@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <sqlite3.h>
 #include "bookshop.h"
 
 
@@ -23,7 +24,7 @@ void displayMenu() {
     printf("Enter your choice: ");
 }
 
-void initializeDatabase(sqlite3 *db) {
+int initializeDatabase(sqlite3 *db) {
     char *errMsg = 0;
     const char *sql = "CREATE TABLE IF NOT EXISTS books ("
                       "id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -46,10 +47,11 @@ void initializeDatabase(sqlite3 *db) {
     if (sqlite3_exec(db, sql, 0, 0, &errMsg) != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", errMsg);
         sqlite3_free(errMsg);
+        return 1;
     }
 }
 
-void addBookToDatabase(sqlite3 *db) {
+int addBookToDatabase(sqlite3 *db) {
     struct Book new_book;
     printf("Enter book title: ");
     scanf(" %[^\n]", new_book.title);
@@ -94,12 +96,12 @@ void addBookToDatabase(sqlite3 *db) {
             fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
             sqlite3_finalize(stmt);
             sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0); 
-            return;
+            return 1;
         }
     } else {
         fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
         sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0); 
-        return;
+        return 1;
     }
 
     sqlite3_finalize(stmt);
@@ -107,11 +109,12 @@ void addBookToDatabase(sqlite3 *db) {
     sqlite3_exec(db, "COMMIT TRANSACTION", 0, 0, 0);
     
     printf("\nBook added successfully!\n\n");
+    return 0;
 }
 
 
 
-void updateBookDetails(sqlite3 *db) {
+int updateBookDetails(sqlite3 *db) {
     char title[100];
     printf("Enter the title of the book to update: ");
     scanf(" %[^\n]", title);
@@ -122,7 +125,7 @@ void updateBookDetails(sqlite3 *db) {
     sqlite3_stmt *stmt_check;
     if (sqlite3_prepare_v2(db, sql_check, -1, &stmt_check, 0) != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
-        return;
+        return 1;
     }
 
     sqlite3_bind_text(stmt_check, 1, title, -1, SQLITE_STATIC);
@@ -130,7 +133,7 @@ void updateBookDetails(sqlite3 *db) {
     if (sqlite3_step(stmt_check) != SQLITE_ROW) {
         printf("Book not found in inventory!\n\n");
         sqlite3_finalize(stmt_check);
-        return;
+        return 1;
     }
 
     sqlite3_finalize(stmt_check);
@@ -175,12 +178,12 @@ void updateBookDetails(sqlite3 *db) {
             fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
             sqlite3_finalize(stmt_update);
             sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0); 
-            return;
+            return 1;
         }
     } else {
         fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
         sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0); 
-        return;
+        return 1;
     }
 
     
@@ -190,10 +193,11 @@ void updateBookDetails(sqlite3 *db) {
     sqlite3_exec(db, "COMMIT TRANSACTION", 0, 0, 0);
     
     printf("\nBook details updated successfully!\n\n");
+    return 0;
 }
 
 
-void showAllBooks(sqlite3 *db) {
+int showAllBooks(sqlite3 *db) {
     printf("\n------------------------------------------\n");
     printf("       Books in Inventory\n");
     printf("------------------------------------------\n\n");
@@ -203,7 +207,7 @@ void showAllBooks(sqlite3 *db) {
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
-        return;
+        return 1;
     }
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -214,11 +218,12 @@ void showAllBooks(sqlite3 *db) {
 
     sqlite3_finalize(stmt);
     printf("\n");
+    return 0;
 }
 
 
 
-void searchByBookTitle(sqlite3 *db) {
+int searchByBookTitle(sqlite3 *db) {
     char title[100];
     printf("Enter the title of the book: ");
     scanf(" %[^\n]", title);
@@ -232,7 +237,7 @@ void searchByBookTitle(sqlite3 *db) {
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
-        return;
+        return 1;
     }
 
     sqlite3_bind_text(stmt, 1, title, -1, SQLITE_TRANSIENT);
@@ -249,9 +254,10 @@ void searchByBookTitle(sqlite3 *db) {
     }
 
     sqlite3_finalize(stmt);
+    return 0;
 }
 
-void searchByBookAuthor(sqlite3 *db) {
+int searchByBookAuthor(sqlite3 *db) {
     char author[100];
     printf("Enter the author of the book: ");
     scanf(" %[^\n]", author);
@@ -265,7 +271,7 @@ void searchByBookAuthor(sqlite3 *db) {
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
-        return;
+        return 1;
     }
 
     sqlite3_bind_text(stmt, 1, author, -1, SQLITE_TRANSIENT);
@@ -282,9 +288,11 @@ void searchByBookAuthor(sqlite3 *db) {
     }
 
     sqlite3_finalize(stmt);
+
+    return 0;
 }
 
-void sellBook(sqlite3 *db) {
+int sellBook(sqlite3 *db) {
     char bookTitle[100];
     int quantity;
     
@@ -296,7 +304,7 @@ void sellBook(sqlite3 *db) {
 
     if (sqlite3_prepare_v2(db, sql_check, -1, &stmt_check, 0) != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
-        return;
+        return 1;
     }
 
     sqlite3_bind_text(stmt_check, 1, bookTitle, -1, SQLITE_TRANSIENT);
@@ -304,7 +312,7 @@ void sellBook(sqlite3 *db) {
     if (sqlite3_step(stmt_check) != SQLITE_ROW) {
         printf("Book not found in inventory!\n\n");
         sqlite3_finalize(stmt_check);
-        return;
+        return 1;
     }
 
     int availableQuantity = sqlite3_column_int(stmt_check, 5);
@@ -316,7 +324,7 @@ void sellBook(sqlite3 *db) {
 
     if (quantity <= 0) {
         printf("\nPlease enter a positive quantity!\n\n");
-        return;
+        return 1;
     }
 
     if (availableQuantity >= quantity) {
@@ -329,7 +337,7 @@ void sellBook(sqlite3 *db) {
         if (sqlite3_prepare_v2(db, sql_update_sale_qty, -1, &stmt_update_sale_qty, 0) != SQLITE_OK) {
             fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
             sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0); 
-            return;
+            return 1;
         }
 
         sqlite3_bind_int(stmt_update_sale_qty, 1, quantity);
@@ -340,7 +348,7 @@ void sellBook(sqlite3 *db) {
             fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
             sqlite3_finalize(stmt_update_sale_qty);
             sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0);
-            return;
+            return 1;
         }
 
         sqlite3_finalize(stmt_update_sale_qty);
@@ -353,11 +361,13 @@ void sellBook(sqlite3 *db) {
     } else {
         printf("\nInsufficient quantity available for sale!\n\n");
     }
+
+    return 0;
 }
 
 
 
-void rentBook(sqlite3 *db) {
+int rentBook(sqlite3 *db) {
     char bookTitle[100];
     int quantity, durationMonths;
     
@@ -369,7 +379,7 @@ void rentBook(sqlite3 *db) {
 
     if (sqlite3_prepare_v2(db, sql_check, -1, &stmt_check, 0) != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
-        return;
+        return 1;
     }
 
     sqlite3_bind_text(stmt_check, 1, bookTitle, -1, SQLITE_TRANSIENT);
@@ -377,7 +387,7 @@ void rentBook(sqlite3 *db) {
     if (sqlite3_step(stmt_check) != SQLITE_ROW) {
         printf("Book not found in inventory!\n\n");
         sqlite3_finalize(stmt_check);
-        return;
+        return 1;
     }
 
     int availableQuantity = sqlite3_column_int(stmt_check, 6);
@@ -391,7 +401,7 @@ void rentBook(sqlite3 *db) {
 
     if (quantity <= 0 || durationMonths <= 0) {
         printf("\nPlease enter a positive quantity and duration!\n\n");
-        return;
+        return 1;
     }
 
     if (availableQuantity >= quantity) {
@@ -404,7 +414,7 @@ void rentBook(sqlite3 *db) {
         if (sqlite3_prepare_v2(db, sql_update_rent_qty, -1, &stmt_update_rent_qty, 0) != SQLITE_OK) {
             fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
             sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0); 
-            return;
+            return 1;
         }
 
         sqlite3_bind_int(stmt_update_rent_qty, 1, quantity);
@@ -415,7 +425,7 @@ void rentBook(sqlite3 *db) {
             fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
             sqlite3_finalize(stmt_update_rent_qty);
             sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0);
-            return;
+            return 1;
         }
 
         sqlite3_finalize(stmt_update_rent_qty);
@@ -432,7 +442,7 @@ void rentBook(sqlite3 *db) {
         if (sqlite3_prepare_v2(db, sql_insert_rent, -1, &stmt_insert_rent, 0) != SQLITE_OK) {
             fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
             sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0);
-            return;
+            return 1;
         }
 
         sqlite3_bind_text(stmt_insert_rent, 1, bookTitle, -1, SQLITE_TRANSIENT);
@@ -443,7 +453,7 @@ void rentBook(sqlite3 *db) {
             fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
             sqlite3_finalize(stmt_insert_rent);
             sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0);
-            return;
+            return 1;
         }
 
         sqlite3_finalize(stmt_insert_rent);
@@ -457,12 +467,14 @@ void rentBook(sqlite3 *db) {
     } else {
         printf("\nInsufficient quantity available for rent!\n\n");
     }
+
+    return 0;
 }
 
 
 
 
-void showSalesReport(sqlite3 *db) {
+int showSalesReport(sqlite3 *db) {
     printf("\n------------------------------------------\n");
     printf("           Sales Report\n");
     printf("------------------------------------------\n");
@@ -472,7 +484,7 @@ void showSalesReport(sqlite3 *db) {
 
     if (sqlite3_prepare_v2(db, query, -1, &statement, 0) != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
-        return;
+        return 1;
     }
 
     double totalSalesRevenue = 0;
@@ -498,10 +510,11 @@ void showSalesReport(sqlite3 *db) {
 
     sqlite3_finalize(statement);
     printf("\n");
+    return 0;
 }
 
 
-void showRentalReport(sqlite3 *db) {
+int showRentalReport(sqlite3 *db) {
     printf("\n------------------------------------------\n");
     printf("           Rental Report\n");
     printf("------------------------------------------\n");
@@ -511,7 +524,7 @@ void showRentalReport(sqlite3 *db) {
 
     if (sqlite3_prepare_v2(db, query, -1, &statement, 0) != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
-        return;
+        return 1;
     }
 
     double totalRentalRevenue = 0;
@@ -541,4 +554,6 @@ void showRentalReport(sqlite3 *db) {
 
     sqlite3_finalize(statement);
     printf("\n");
+
+    return 0;
 }

@@ -23,16 +23,16 @@ struct Rent {
 };
 
 void displayMenu();
-void initializeDatabase(sqlite3 *db);
-void addBookToDatabase(sqlite3 *db);
-void updateBookDetails(sqlite3 *db);
-void showAllBooks(sqlite3 *db);
-void searchByBookTitle(sqlite3 *db);
-void searchByBookAuthor(sqlite3 *db);
-void sellBook(sqlite3 *db);
-void rentBook(sqlite3 *db);
-void showSalesReport(sqlite3 *db);
-void showRentalReport(sqlite3 *db);
+int initializeDatabase(sqlite3 *db);
+int addBookToDatabase(sqlite3 *db);
+int updateBookDetails(sqlite3 *db);
+int showAllBooks(sqlite3 *db);
+int searchByBookTitle(sqlite3 *db);
+int searchByBookAuthor(sqlite3 *db);
+int sellBook(sqlite3 *db);
+int rentBook(sqlite3 *db);
+int showSalesReport(sqlite3 *db);
+int showRentalReport(sqlite3 *db);
 
 
 #endif 
