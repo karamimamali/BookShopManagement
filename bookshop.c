@@ -19,7 +19,7 @@ void displayMenu() {
     printf("|  7. Rent Book                           |\n");
     printf("|  8. Generate Sales Report               |\n");
     printf("|  9. Generate Rental Report              |\n");
-    printf("|  10. Exit                                |\n");
+    printf("|  10. Exit                               |\n");
     printf("|-----------------------------------------|\n\n");
     printf("Enter your choice: ");
 }
@@ -51,6 +51,7 @@ int initializeDatabase(sqlite3 *db) {
     }
 }
 
+
 int addBookToDatabase(sqlite3 *db) {
     struct Book new_book;
     printf("Enter book title: ");
@@ -60,11 +61,20 @@ int addBookToDatabase(sqlite3 *db) {
     printf("Enter genre: ");
     scanf(" %[^\n]", new_book.genre);
     printf("Enter price: ");
-    scanf("%f", &new_book.price);
+    if (scanf("%f", &new_book.price) != 1 || new_book.price < 0) {
+        fprintf(stderr, "Invalid price. Please enter a valid numeric value.\n");
+        return 1;
+    }
     printf("Enter quantity available for sale: ");
-    scanf("%d", &new_book.available_for_sale);
+    if (scanf("%d", &new_book.available_for_sale) != 1 || new_book.available_for_sale < 0) {
+        fprintf(stderr, "Invalid quantity for sale. Please enter a positive integer.\n");
+        return 1;
+    }
     printf("Enter quantity available for rent: ");
-    scanf("%d", &new_book.available_for_rent);
+    if (scanf("%d", &new_book.available_for_rent) != 1 || new_book.available_for_rent < 0) {
+        fprintf(stderr, "Invalid quantity for rent. Please enter a positive integer.\n");
+        return 1;
+    }
 
     new_book.sold_count = 0;
     new_book.rent_count = 0;
@@ -72,15 +82,12 @@ int addBookToDatabase(sqlite3 *db) {
     char sql[500];
     sqlite3_stmt *stmt;
     const char *tail;
-    
-    
+
     sqlite3_exec(db, "BEGIN TRANSACTION", 0, 0, 0);
 
     sprintf(sql, "INSERT INTO books (title, author, genre, price, available_for_sale, available_for_rent, sold_count, rent_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?);");
 
-    
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, &tail) == SQLITE_OK) {
-        
         sqlite3_bind_text(stmt, 1, new_book.title, -1, SQLITE_STATIC);
         sqlite3_bind_text(stmt, 2, new_book.author, -1, SQLITE_STATIC);
         sqlite3_bind_text(stmt, 3, new_book.genre, -1, SQLITE_STATIC);
@@ -90,24 +97,23 @@ int addBookToDatabase(sqlite3 *db) {
         sqlite3_bind_int(stmt, 7, new_book.sold_count);
         sqlite3_bind_int(stmt, 8, new_book.rent_count);
 
-        
         int result = sqlite3_step(stmt);
         if (result != SQLITE_DONE) {
             fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
             sqlite3_finalize(stmt);
-            sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0); 
+            sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0);
             return 1;
         }
     } else {
         fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
-        sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0); 
+        sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0);
         return 1;
     }
 
     sqlite3_finalize(stmt);
 
     sqlite3_exec(db, "COMMIT TRANSACTION", 0, 0, 0);
-    
+
     printf("\nBook added successfully!\n\n");
     return 0;
 }
@@ -146,24 +152,30 @@ int updateBookDetails(sqlite3 *db) {
     printf("Enter updated genre: ");
     scanf(" %[^\n]", updated_book.genre);
     printf("Enter updated price: ");
-    scanf("%f", &updated_book.price);
+    if (scanf("%f", &updated_book.price) != 1 || updated_book.price < 0) {
+        fprintf(stderr, "Invalid price. Please enter a valid numeric value.\n");
+        return 1;
+    }
     printf("Enter updated quantity available for sale: ");
-    scanf("%d", &updated_book.available_for_sale);
+    if (scanf("%d", &updated_book.available_for_sale) != 1 || updated_book.available_for_sale < 0) {
+        fprintf(stderr, "Invalid quantity for sale. Please enter a positive integer.\n");
+        return 1;
+    }
     printf("Enter updated quantity available for rent: ");
-    scanf("%d", &updated_book.available_for_rent);
+    if (scanf("%d", &updated_book.available_for_rent) != 1 || updated_book.available_for_rent < 0) {
+        fprintf(stderr, "Invalid quantity for rent. Please enter a positive integer.\n");
+        return 1;
+    }
 
     char sql_update[500];
     sqlite3_stmt *stmt_update;
     const char *tail;
-    
-    
+
     sqlite3_exec(db, "BEGIN TRANSACTION", 0, 0, 0);
 
     sprintf(sql_update, "UPDATE books SET title = ?, author = ?, genre = ?, price = ?, available_for_sale = ?, available_for_rent = ? WHERE title = ?;");
 
-    
     if (sqlite3_prepare_v2(db, sql_update, -1, &stmt_update, &tail) == SQLITE_OK) {
-        
         sqlite3_bind_text(stmt_update, 1, updated_book.title, -1, SQLITE_STATIC);
         sqlite3_bind_text(stmt_update, 2, updated_book.author, -1, SQLITE_STATIC);
         sqlite3_bind_text(stmt_update, 3, updated_book.genre, -1, SQLITE_STATIC);
@@ -172,30 +184,26 @@ int updateBookDetails(sqlite3 *db) {
         sqlite3_bind_int(stmt_update, 6, updated_book.available_for_rent);
         sqlite3_bind_text(stmt_update, 7, title, -1, SQLITE_STATIC);
 
-        
         int result = sqlite3_step(stmt_update);
         if (result != SQLITE_DONE) {
             fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
             sqlite3_finalize(stmt_update);
-            sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0); 
+            sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0);
             return 1;
         }
     } else {
         fprintf(stderr, "SQL error: %s\n", sqlite3_errmsg(db));
-        sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0); 
+        sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0);
         return 1;
     }
 
-    
     sqlite3_finalize(stmt_update);
 
-    
     sqlite3_exec(db, "COMMIT TRANSACTION", 0, 0, 0);
-    
+
     printf("\nBook details updated successfully!\n\n");
     return 0;
 }
-
 
 int showAllBooks(sqlite3 *db) {
     printf("\n------------------------------------------\n");
